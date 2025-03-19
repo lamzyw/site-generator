@@ -1,0 +1,11 @@
+.container {
+    margin: 20px;
+  }
+  .textarea {
+    width: 100%;
+    max-width: 600px;
+    padding: 10px;
+  }
+  @media (max-width: 768px) {
+    .textarea { width: 90%; }
+  }
