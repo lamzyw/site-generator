@@ -1,39 +1,65 @@
-import React, { useState } from "react";
-import Header from "../components/Header";
-import TextArea from "../components/TextArea";
-import GenerateButton from "../components/GenerateButton";
-import DownloadButton from "../components/DownloadButton";
+import { useState } from 'react';
 
-const Home = () => {
-  const [description, setDescription] = useState("");
-  const [html, setHtml] = useState("");
-  const [zipBase64, setZipBase64] = useState("");
+export default function Home() {
+  const [prompt, setPrompt] = useState('');
+  const [generatedContent, setGeneratedContent] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleGenerate = async () => {
-    const response = await fetch("/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ description }),
-    });
-    const data = await response.json();
-    setHtml(data.html);
-    setZipBase64(data.zipBase64);
+    setLoading(true);
+    setError(null);
+    setGeneratedContent('');
+
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate content');
+      }
+
+      setGeneratedContent(data.generated);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClear = () => {
+    setPrompt('');
+    setGeneratedContent('');
+    setError(null);
   };
 
   return (
-    <div>
-      <Header />
-      <TextArea value={description} setValue={setDescription} />
-      <GenerateButton onClick={handleGenerate} disabled={!description} />
-      {html && (
-        <div>
-          <h2>Предпросмотр</h2>
-          <div dangerouslySetInnerHTML={{ __html: html }} />
-          <DownloadButton zipBase64={zipBase64} disabled={!zipBase64} />
+    <div className="container">
+      <h1>Lamzy</h1>
+      <input
+        type="text"
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+        placeholder="сгенери сайт про машины"
+      />
+      <br />
+      <button onClick={handleClear}>Очистить ваши сайты</button>
+      <button onClick={handleGenerate} disabled={loading}>
+        {loading ? 'Генерируется...' : 'Сгенерировать'}
+      </button>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {generatedContent && (
+        <div className="generated-content">
+          <h2>Сгенерированный контент:</h2>
+          <div dangerouslySetInnerHTML={{ __html: generatedContent }} />
         </div>
       )}
     </div>
   );
-};
-
-export default Home;
+}
